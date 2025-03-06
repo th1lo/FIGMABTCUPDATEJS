@@ -41,9 +41,9 @@ Create a `.env` file in the root directory:
 
 Set how often the script fetches and updates the Bitcoin price by modifying `intervalInMinutes` in the script:
 
-    ```javascript
-    const intervalInMinutes = 5;  // Default: 5 minutes
-    ```
+```javascript
+const intervalInMinutes = 5;  // Default: 5 minutes
+```
 
 ### Figma Setup Requirements
 
@@ -54,9 +54,9 @@ Set how often the script fetches and updates the Bitcoin price by modifying `int
 
 Start the script:
 
-    ```bash
-    node update-btc-price.js
-    ```
+```bash
+node update-btc-price.js
+```
 
 The script will:
 
