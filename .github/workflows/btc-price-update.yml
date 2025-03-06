@@ -28,16 +28,10 @@ jobs:
       - name: Read configurations
         id: config
         run: |
-          content=$(cat .github/btc-tracker-config.json)
-          # Escape newlines and quotes for GitHub Actions
-          content="${content//'%'/'%25'}"
-          content="${content//$'\n'/'%0A'}"
-          content="${content//$'\r'/'%0D'}"
-          content="${content//$'"'/'\\"'}"
-          echo "config=$content" >> $GITHUB_OUTPUT
+          echo "config=$(cat .github/btc-tracker-config.json | jq -c .)" >> $GITHUB_OUTPUT
 
       - name: Update Figma files
         env:
           CONFIGS: ${{ steps.config.outputs.config }}
           CURRENT_MINUTE: ${{ steps.time.outputs.time }}
-        run: node .github/scripts/update-multiple.js 
+        run: node .github/scripts/update-multiple.js

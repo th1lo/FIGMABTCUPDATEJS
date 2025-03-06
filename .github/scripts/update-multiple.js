@@ -4,7 +4,12 @@ import { getBTCPrice, updateFigmaVariables } from './btc-utils.js';
 async function processConfigurations() {
   try {
     // Read configurations from environment
-    const configs = JSON.parse(process.env.CONFIGS).configurations;
+    const configJson = process.env.CONFIGS;
+    if (!configJson) {
+      throw new Error('No configurations found');
+    }
+
+    const configs = JSON.parse(configJson).configurations;
     
     // Get BTC price once for all updates
     const priceData = await getBTCPrice();
@@ -22,7 +27,9 @@ async function processConfigurations() {
       }
 
       // Check if it's time to update this configuration
-      const shouldUpdate = config.interval <= 5; // For 5-minute schedule
+      const currentMinute = parseInt(process.env.CURRENT_MINUTE || '0');
+      const shouldUpdate = currentMinute % config.interval === 0;
+      
       if (!shouldUpdate) {
         console.log(`⏭️  Skipping config ${config.id} (${config.interval}min interval)`);
         continue;
@@ -37,5 +44,5 @@ async function processConfigurations() {
   }
 }
 
-// Run the updates
+// Run the script
 processConfigurations(); 
