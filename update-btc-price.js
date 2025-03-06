@@ -208,4 +208,25 @@ const main = async () => {
   }
 };
 
-main();
+// Function to update BTC price
+async function updateBTCPrice() {
+  try {
+    // Your existing update logic here
+    console.log('Updating BTC price...');
+    await createOrUpdateVariables(collectionId, priceData);
+    console.log('Update completed successfully');
+  } catch (error) {
+    console.error('Error updating BTC price:', error);
+  }
+}
+
+// Execute immediately on start
+updateBTCPrice();
+
+// Then set up the interval
+const intervalInMinutes = 5; // Default: 5 minutes
+const intervalInMs = intervalInMinutes * 60 * 1000;
+
+setInterval(updateBTCPrice, intervalInMs);
+
+console.log(`Script started! Will update every ${intervalInMinutes} minutes.`);
