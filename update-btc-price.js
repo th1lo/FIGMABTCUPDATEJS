@@ -1,14 +1,52 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import ora from 'ora';
+import chalk from 'chalk';
 
 // Load environment variables from .env file
 dotenv.config();
+
+// Add timestamp to logs
+const timestamp = () => chalk.gray(`[${new Date().toLocaleTimeString()}]`);
+
+// Spinner instance
+const spinner = ora({
+  text: 'Starting BTC price update...',
+  color: 'yellow'
+});
+
+// Debug logging
+const debugLog = (...args) => {
+  if (process.env.DEBUG === 'true') {
+    const spinnerWasSpinning = spinner.isSpinning;
+    spinner.stop();
+    console.log(timestamp(), chalk.blue('[DEBUG]'), ...args);
+    if (spinnerWasSpinning) {
+      spinner.start();
+    }
+  }
+};
+
+// Success logging
+const successLog = (message) => {
+  spinner.stop();
+  console.log(timestamp(), chalk.green('✓'), message);
+};
+
+// Error logging
+const errorLog = (message, error) => {
+  spinner.stop();
+  console.error(timestamp(), chalk.red('✗'), message);
+  if (error && process.env.DEBUG === 'true') {
+    console.error(chalk.red(error));
+  }
+};
 
 // Helper function to get the current BTC price
 const getBTCPrice = async () => {
   try {
     const response = await axios.get(process.env.BTC_API_URL);
-    console.log('BTC API Response:', response.data);
+    debugLog('BTC API Response:', response.data);
 
     if (response.data && response.data.RAW) {
       const priceData = response.data.RAW;
@@ -40,19 +78,17 @@ const fetchCollections = async () => {
       }
     });
 
-    console.log('Collections fetched:', JSON.stringify(collectionsResponse.data, null, 2));
+    debugLog('Collections fetched:', JSON.stringify(collectionsResponse.data, null, 2));
 
     // Check if the collection exists
     const collection = Object.values(collectionsResponse.data.meta.variableCollections)
       .find(coll => coll.name === process.env.FIGMA_COLLECTION_NAME);
 
     if (collection) {
-      console.log(`Collection ${process.env.FIGMA_COLLECTION_NAME} found with ID:`, collection.id);
+      debugLog(`Found existing collection "${process.env.FIGMA_COLLECTION_NAME}"`);
       return collection.id;
     } else {
-      console.log(`Collection ${process.env.FIGMA_COLLECTION_NAME} not found. Creating a new one...`);
-      
-      // Create new collection and immediately fetch the updated collections
+      spinner.text = `Creating new collection "${process.env.FIGMA_COLLECTION_NAME}"...`;
       await createCollection();
       
       // Fetch collections again to get the new collection's real ID
@@ -66,18 +102,14 @@ const fetchCollections = async () => {
         .find(coll => coll.name === process.env.FIGMA_COLLECTION_NAME);
       
       if (newCollection) {
-        console.log('New collection found with ID:', newCollection.id);
+        successLog(`Created new collection "${process.env.FIGMA_COLLECTION_NAME}"`);
         return newCollection.id;
       } else {
-        throw new Error('Failed to find newly created collection');
+        throw new Error(`Failed to create collection "${process.env.FIGMA_COLLECTION_NAME}"`);
       }
     }
   } catch (error) {
-    console.error('Error in fetchCollections:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    });
+    errorLog('Failed to access Figma collections', error);
     throw error;
   }
 };
@@ -96,13 +128,13 @@ const createCollection = async () => {
   };
 
   try {
-    console.log('Creating collection with payload:', JSON.stringify(data, null, 2));
+    debugLog('Creating collection with payload:', JSON.stringify(data, null, 2));
     const response = await axios.post(`https://api.figma.com/v1/files/${process.env.FIGMA_FILE_KEY}/variables`, data, {
       headers: {
         'X-FIGMA-TOKEN': process.env.FIGMA_TOKEN
       }
     });
-    console.log('Collection created response:', JSON.stringify(response.data, null, 2));
+    debugLog('Collection created response:', JSON.stringify(response.data, null, 2));
     return response;
   } catch (error) {
     console.error('Error creating collection:', {
@@ -129,7 +161,7 @@ const createOrUpdateVariables = async (collectionId, priceData) => {
     }
 
     const defaultModeId = collection.defaultModeId;
-    console.log('Using default mode ID:', defaultModeId);
+    debugLog('Using default mode ID:', defaultModeId);
 
     // Define all variables we want to create/update
     const variableDefinitions = [
@@ -168,13 +200,13 @@ const createOrUpdateVariables = async (collectionId, priceData) => {
       })
     };
 
-    console.log('Updating variables with payload:', JSON.stringify(data, null, 2));
+    debugLog('Updating variables with payload:', JSON.stringify(data, null, 2));
     const response = await axios.post(`https://api.figma.com/v1/files/${process.env.FIGMA_FILE_KEY}/variables`, data, {
       headers: {
         'X-FIGMA-TOKEN': process.env.FIGMA_TOKEN
       }
     });
-    console.log('Variables update response:', JSON.stringify(response.data, null, 2));
+    debugLog('Variables update response:', JSON.stringify(response.data, null, 2));
   } catch (error) {
     console.error('Error creating or updating variables:', {
       message: error.message,
@@ -188,45 +220,78 @@ const createOrUpdateVariables = async (collectionId, priceData) => {
 // Main script logic
 const main = async () => {
   try {
+    // Fetch BTC price
+    spinner.start('Fetching current Bitcoin price...');
     const priceData = await getBTCPrice();
     if (!priceData) {
-      console.log('No BTC price data found, aborting...');
+      errorLog('Could not fetch Bitcoin price, check your internet connection');
       return;
     }
+    successLog('Bitcoin price data received');
+    debugLog(`Current BTC price: ${priceData.price} EUR`);
 
+    // Connect to Figma
+    spinner.start('Connecting to Figma...');
     const collectionId = await fetchCollections();
     if (!collectionId) {
-      console.log('Failed to get a valid collection ID, aborting...');
+      errorLog('Could not access Figma, check your access token');
       return;
     }
+    successLog('Connected to Figma successfully');
 
+    // Update variables
+    spinner.start('Updating Figma variables...');
     await createOrUpdateVariables(collectionId, priceData);
-
-    console.log('BTC Price update successful');
+    successLog('Variables updated successfully');
+    
+    // Final success message
+    successLog(`Current BTC price: ${priceData.price} EUR`);
   } catch (error) {
-    console.error('Error during script execution:', error.message);
+    errorLog('Failed to update Figma variables', error);
   }
 };
 
-// Function to update BTC price
+// Add this helper function for formatting time
+const formatTimeRemaining = (ms) => {
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  return `${minutes}m ${seconds}s`;
+};
+
+// Update the updateBTCPrice function
 async function updateBTCPrice() {
+  spinner.start('Starting price update...');
+  
   try {
-    // Your existing update logic here
-    console.log('Updating BTC price...');
-    await createOrUpdateVariables(collectionId, priceData);
-    console.log('Update completed successfully');
+    await main();
+    
+    // Start countdown for next update
+    const startTime = Date.now();
+    const countdownInterval = setInterval(() => {
+      const remaining = intervalInMs - (Date.now() - startTime);
+      if (remaining <= 0) {
+        clearInterval(countdownInterval);
+        return;
+      }
+      spinner.start(`Next update in ${formatTimeRemaining(remaining)}`);
+    }, 1000);
+
+    // Clear the countdown when the next update starts
+    setTimeout(() => {
+      clearInterval(countdownInterval);
+    }, intervalInMs);
+
   } catch (error) {
-    console.error('Error updating BTC price:', error);
+    errorLog('Update failed', error);
   }
 }
 
-// Execute immediately on start
-updateBTCPrice();
-
-// Then set up the interval
-const intervalInMinutes = 5; // Default: 5 minutes
+// Update interval display
+const intervalInMinutes = 5;
 const intervalInMs = intervalInMinutes * 60 * 1000;
 
+// Initial startup message
+console.clear(); // Clear console for cleaner display
+console.log(timestamp(), chalk.cyan('▶'), `BTC Price Tracker Started (Updates every ${intervalInMinutes} minutes)`);
+updateBTCPrice();
 setInterval(updateBTCPrice, intervalInMs);
-
-console.log(`Script started! Will update every ${intervalInMinutes} minutes.`);

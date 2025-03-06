@@ -45,6 +45,9 @@ Create a `.env` file in the root directory:
 
     # Default Mode Name (Value in Figma)
     FIGMA_MODE_NAME=Value
+
+    # Enable detailed debug logging (true/false)
+    DEBUG=false
     ```
 
 ## Configuration
