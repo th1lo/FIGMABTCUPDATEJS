@@ -59,6 +59,7 @@ async function processConfigurations() {
       } catch (error) {
         console.error('❌ Update failed:', error.message);
         errorCount++;
+        continue; // Skip to next config on error
       }
     }
 

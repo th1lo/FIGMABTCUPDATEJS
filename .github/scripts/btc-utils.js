@@ -44,13 +44,20 @@ export async function updateFigmaVariables(config, priceData) {
   try {
     // First get or create collection
     const collectionId = await getOrCreateCollection(config);
-    if (!collectionId) return;
+    if (!collectionId) {
+      throw new Error('Failed to get/create collection');
+    }
 
     // Update variables
     await updateVariables(config, collectionId, priceData);
-    console.log(`✓ Updated variables for ${config.id}`);
+    return true; // Success
   } catch (error) {
-    console.error(`❌ Failed to update ${config.id}:`, error.message);
+    console.error(`❌ Error updating ${config.id}:`, {
+      message: error.message,
+      status: error.response?.status,
+      details: error.response?.data
+    });
+    throw error; // Re-throw to handle in the main script
   }
 }
 
@@ -150,16 +157,17 @@ async function updateVariables(config, collectionId, priceData) {
       throw new Error('Collection not found');
     }
 
+    console.log('📝 Preparing to update variables...');
     const defaultModeId = collection.defaultModeId;
 
     // Define variables to update
     const variableDefinitions = [
       { name: 'Price', value: priceData.price },
-      { name: 'Change24h', value: `${priceData.change24h > 0 ? '+' : ''}${priceData.change24h}` },
-      { name: 'ChangePct24h', value: `${priceData.changePct24h > 0 ? '+' : ''}${priceData.changePct24h}%` },
-      { name: 'High24h', value: priceData.high24h },
-      { name: 'Low24h', value: priceData.low24h },
-      { name: 'LastUpdate', value: priceData.lastUpdate },
+      { name: 'Change 24h', value: priceData.change24h },
+      { name: 'Change % 24h', value: `${priceData.changePct24h}%` },
+      { name: 'High 24h', value: priceData.high24h },
+      { name: 'Low 24h', value: priceData.low24h },
+      { name: 'Last Update', value: priceData.lastUpdate },
       { name: 'Market', value: priceData.market }
     ];
 
@@ -167,26 +175,25 @@ async function updateVariables(config, collectionId, priceData) {
     const existingVariables = Object.values(collectionsResponse.data.meta.variables)
       .filter(v => v.variableCollectionId === collectionId);
 
-    // Prepare update payload
-    const updatePayload = {
-      variables: variableDefinitions.map(def => ({
-        action: existingVariables.find(v => v.name === def.name) ? 'UPDATE' : 'CREATE',
-        id: existingVariables.find(v => v.name === def.name)?.id || `temp_${def.name.toLowerCase()}_id`,
-        name: def.name,
-        variableCollectionId: collectionId,
-        resolvedType: 'STRING'
-      })),
-      variableModeValues: variableDefinitions.map(def => ({
-        variableId: existingVariables.find(v => v.name === def.name)?.id || `temp_${def.name.toLowerCase()}_id`,
-        modeId: defaultModeId,
-        value: def.value.toString()
-      }))
-    };
+    console.log('Found existing variables:', existingVariables.map(v => v.name).join(', ') || 'none');
 
     // Update variables
-    await axios.post(
+    const updateResponse = await axios.post(
       `https://api.figma.com/v1/files/${config.figmaFileKey}/variables`,
-      updatePayload,
+      {
+        variables: variableDefinitions.map(def => ({
+          action: existingVariables.find(v => v.name === def.name) ? 'UPDATE' : 'CREATE',
+          id: existingVariables.find(v => v.name === def.name)?.id || `temp_${def.name.toLowerCase()}_id`,
+          name: def.name,
+          variableCollectionId: collectionId,
+          resolvedType: 'STRING'
+        })),
+        variableModeValues: variableDefinitions.map(def => ({
+          variableId: existingVariables.find(v => v.name === def.name)?.id || `temp_${def.name.toLowerCase()}_id`,
+          modeId: defaultModeId,
+          value: def.value.toString()
+        }))
+      },
       {
         headers: {
           'X-FIGMA-TOKEN': decryptedToken
@@ -194,8 +201,18 @@ async function updateVariables(config, collectionId, priceData) {
       }
     );
 
+    if (!updateResponse.data) {
+      throw new Error('No response from Figma API');
+    }
+
+    console.log('✅ Variables updated successfully');
+    return true;
   } catch (error) {
-    console.error('❌ Failed to update variables:', error.message);
+    console.error('❌ Variable update error:', {
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    });
     throw error;
   }
 } 
