@@ -26,17 +26,23 @@ async function processConfigurations() {
         continue;
       }
 
-      // Check if it's time to update this configuration
-      const currentMinute = parseInt(process.env.CURRENT_MINUTE || '0');
-      const shouldUpdate = currentMinute % config.interval === 0;
-      
-      if (!shouldUpdate) {
-        console.log(`⏭️  Skipping config ${config.id} (${config.interval}min interval)`);
+      // Always update 5-minute configs
+      if (config.interval === 5) {
+        console.log(`🔄 Processing ${config.id}:`);
+        await updateFigmaVariables(config, priceData);
         continue;
       }
 
-      console.log(`\n🔄 Processing ${config.id}:`);
-      await updateFigmaVariables(config, priceData);
+      // For other intervals, check if it's the right time
+      const currentMinute = parseInt(process.env.CURRENT_MINUTE || '0');
+      const shouldUpdate = currentMinute % config.interval === 0;
+      
+      if (shouldUpdate) {
+        console.log(`🔄 Processing ${config.id}:`);
+        await updateFigmaVariables(config, priceData);
+      } else {
+        console.log(`⏭️  Skipping config ${config.id} (${config.interval}min interval)`);
+      }
     }
   } catch (error) {
     console.error('❌ Error processing configurations:', error);
