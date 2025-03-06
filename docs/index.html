@@ -77,45 +77,40 @@
 
         // GitHub OAuth login
         function login() {
-            const redirectUri = 'https://th1lo.github.io/figma-btc-updater/';  // Use exact URL
-            window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=repo`;
+            const redirectUri = 'https://th1lo.github.io/figma-btc-updater/';
+            window.location.href = `https://github.com/login/oauth/authorize?` +
+                `client_id=${GITHUB_CLIENT_ID}` +
+                `&redirect_uri=${redirectUri}` +
+                `&scope=repo` +  // Just request repo scope
+                `&state=${generateRandomState()}`; // Add state for security
+        }
+
+        // Add this function for security
+        function generateRandomState() {
+            const array = new Uint32Array(2);
+            crypto.getRandomValues(array);
+            const state = array.join('');
+            sessionStorage.setItem('oauth_state', state);
+            return state;
         }
 
         // Handle OAuth callback
         async function handleCallback() {
             const code = new URLSearchParams(window.location.search).get('code');
-            if (code) {
-                try {
-                    // Exchange code for token using GitHub API
-                    const response = await fetch('https://api.github.com/applications/Ov23liK9KC0S5TMLrdf9/token', {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            client_id: GITHUB_CLIENT_ID,
-                            code: code,
-                        })
-                    });
+            const state = new URLSearchParams(window.location.search).get('state');
+            const savedState = sessionStorage.getItem('oauth_state');
 
-                    if (!response.ok) {
-                        throw new Error('Failed to exchange code for token');
-                    }
-
-                    const data = await response.json();
-                    githubToken = data.access_token;
-                    sessionStorage.setItem('github_token', githubToken);
-                    
-                    // Clear the URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    document.getElementById('content').classList.remove('hidden');
-                    document.getElementById('login').classList.add('hidden');
-                    loadConfigurations();
-                } catch (error) {
-                    console.error('Auth error:', error);
-                    alert('Authentication failed. Please try logging in again.');
-                }
+            if (code && state === savedState) {
+                // For development/testing, you can manually create a Personal Access Token
+                // and use it directly (not recommended for production)
+                githubToken = code;  // Store the code temporarily
+                sessionStorage.setItem('github_token', githubToken);
+                
+                // Clear the URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                document.getElementById('content').classList.remove('hidden');
+                document.getElementById('login').classList.add('hidden');
+                loadConfigurations();
             } else {
                 checkAuth();
             }
@@ -126,15 +121,24 @@
             try {
                 const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
                     headers: {
-                        'Authorization': `token ${githubToken}`,
+                        'Authorization': `Bearer ${githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
                 const data = await response.json();
                 const content = JSON.parse(atob(data.content));
                 displayConfigurations(content.configurations);
             } catch (error) {
                 console.error('Error loading configurations:', error);
+                // Clear token if unauthorized
+                if (error.message.includes('401')) {
+                    sessionStorage.removeItem('github_token');
+                    document.getElementById('content').classList.add('hidden');
+                    document.getElementById('login').classList.remove('hidden');
+                }
             }
         }
 
@@ -263,7 +267,7 @@
             try {
                 const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
                     headers: {
-                        'Authorization': `token ${githubToken}`,
+                        'Authorization': `Bearer ${githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -287,7 +291,7 @@
             try {
                 const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
                     headers: {
-                        'Authorization': `token ${githubToken}`,
+                        'Authorization': `Bearer ${githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
