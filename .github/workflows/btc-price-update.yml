@@ -8,6 +8,7 @@ on:
 
 jobs:
   update-prices:
+    name: Update BTC Prices (${{ github.event_name }})
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -27,11 +28,16 @@ jobs:
       
       - name: Read configurations
         id: config
-        run: |
-          echo "config=$(cat .github/btc-tracker-config.json | jq -c .)" >> $GITHUB_OUTPUT
+        run: echo "config=$(cat .github/btc-tracker-config.json | jq -c .)" >> $GITHUB_OUTPUT
 
       - name: Update Figma files
+        id: update
         env:
           CONFIGS: ${{ steps.config.outputs.config }}
           CURRENT_MINUTE: ${{ steps.time.outputs.time }}
-        run: node .github/scripts/update-multiple.js
+        run: |
+          echo "::group::Running BTC Price Updates"
+          node .github/scripts/update-multiple.js
+          EXIT_CODE=$?
+          echo "::endgroup::"
+          exit $EXIT_CODE

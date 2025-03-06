@@ -3,52 +3,78 @@ import { getBTCPrice, updateFigmaVariables } from './btc-utils.js';
 
 async function processConfigurations() {
   try {
-    // Read configurations from environment
+    console.log('🚀 Starting BTC Price Update job');
+    
     const configJson = process.env.CONFIGS;
     if (!configJson) {
       throw new Error('No configurations found');
     }
 
     const configs = JSON.parse(configJson).configurations;
+    console.log(`📋 Found ${configs.length} configuration(s)`);
     
-    // Get BTC price once for all updates
     const priceData = await getBTCPrice();
     if (!priceData) {
-      console.error('❌ Failed to fetch BTC price');
-      return;
+      throw new Error('Failed to fetch BTC price');
     }
-    console.log('✓ BTC price fetched:', priceData.price, 'EUR');
+    console.log('💰 BTC price fetched:', priceData.price, 'EUR');
 
-    // Process each enabled configuration
+    let successCount = 0;
+    let skipCount = 0;
+    let errorCount = 0;
+
     for (const config of configs) {
+      console.log(`\n📌 Processing configuration: ${config.id}`);
+      console.log(`   File: ${config.figmaFileKey}`);
+      console.log(`   Collection: ${config.collectionName}`);
+      console.log(`   Interval: ${config.interval} minutes`);
+      console.log(`   Status: ${config.enabled ? 'Enabled' : 'Disabled'}`);
+
       if (!config.enabled) {
-        console.log(`⏭️  Skipping disabled config: ${config.id}`);
+        console.log('⏭️  Skipping disabled configuration');
+        skipCount++;
         continue;
       }
 
-      // Always update 5-minute configs
-      if (config.interval === 5) {
-        console.log(`🔄 Processing ${config.id}:`);
-        await updateFigmaVariables(config, priceData);
-        continue;
-      }
-
-      // For other intervals, check if it's the right time
-      const currentMinute = parseInt(process.env.CURRENT_MINUTE || '0');
-      const shouldUpdate = currentMinute % config.interval === 0;
-      
-      if (shouldUpdate) {
-        console.log(`🔄 Processing ${config.id}:`);
-        await updateFigmaVariables(config, priceData);
-      } else {
-        console.log(`⏭️  Skipping config ${config.id} (${config.interval}min interval)`);
+      try {
+        if (config.interval === 5) {
+          console.log('🔄 Updating...');
+          await updateFigmaVariables(config, priceData);
+          successCount++;
+          console.log('✅ Update successful');
+        } else {
+          const currentMinute = parseInt(process.env.CURRENT_MINUTE || '0');
+          const shouldUpdate = currentMinute % config.interval === 0;
+          
+          if (shouldUpdate) {
+            console.log('🔄 Updating...');
+            await updateFigmaVariables(config, priceData);
+            successCount++;
+            console.log('✅ Update successful');
+          } else {
+            console.log('⏭️  Skipping (not scheduled for this interval)');
+            skipCount++;
+          }
+        }
+      } catch (error) {
+        console.error('❌ Update failed:', error.message);
+        errorCount++;
       }
     }
+
+    console.log('\n📊 Summary:');
+    console.log(`   Success: ${successCount}`);
+    console.log(`   Skipped: ${skipCount}`);
+    console.log(`   Errors: ${errorCount}`);
+
+    if (errorCount > 0) {
+      throw new Error(`Failed to update ${errorCount} configuration(s)`);
+    }
+
   } catch (error) {
-    console.error('❌ Error processing configurations:', error);
+    console.error('\n❌ Job failed:', error.message);
     process.exit(1);
   }
 }
 
-// Run the script
 processConfigurations(); 

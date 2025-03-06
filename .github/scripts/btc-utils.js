@@ -39,11 +39,16 @@ export async function updateFigmaVariables(config, priceData) {
 
 async function getOrCreateCollection(config) {
   try {
+    // Add debug logging
+    console.log('Attempting to access Figma file:', config.figmaFileKey);
+    const decryptedToken = decryptToken(config.figmaToken);
+    console.log('Token length:', decryptedToken.length);
+    
     const collectionsResponse = await axios.get(
       `https://api.figma.com/v1/files/${config.figmaFileKey}/variables/local`,
       {
         headers: {
-          'X-FIGMA-TOKEN': config.figmaToken
+          'X-FIGMA-TOKEN': decryptedToken
         }
       }
     );
@@ -70,7 +75,7 @@ async function getOrCreateCollection(config) {
       },
       {
         headers: {
-          'X-FIGMA-TOKEN': config.figmaToken
+          'X-FIGMA-TOKEN': decryptedToken
         }
       }
     );
@@ -80,7 +85,7 @@ async function getOrCreateCollection(config) {
       `https://api.figma.com/v1/files/${config.figmaFileKey}/variables/local`,
       {
         headers: {
-          'X-FIGMA-TOKEN': config.figmaToken
+          'X-FIGMA-TOKEN': decryptedToken
         }
       }
     );
@@ -95,7 +100,12 @@ async function getOrCreateCollection(config) {
 
     throw new Error('Failed to create collection');
   } catch (error) {
-    console.error('❌ Failed to access/create collection:', error.message);
+    // Add more detailed error logging
+    console.error('❌ Detailed error:', {
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    });
     return null;
   }
 }
