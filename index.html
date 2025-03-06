@@ -85,14 +85,37 @@
         async function handleCallback() {
             const code = new URLSearchParams(window.location.search).get('code');
             if (code) {
-                // Exchange code for token using GitHub's OAuth flow
-                githubToken = code;  // GitHub will handle the token exchange
-                sessionStorage.setItem('github_token', githubToken);
-                // Clear the URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-                document.getElementById('content').classList.remove('hidden');
-                document.getElementById('login').classList.add('hidden');
-                loadConfigurations();
+                try {
+                    // Exchange code for token using GitHub API
+                    const response = await fetch('https://api.github.com/applications/Ov23liK9KC0S5TMLrdf9/token', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            client_id: GITHUB_CLIENT_ID,
+                            code: code,
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to exchange code for token');
+                    }
+
+                    const data = await response.json();
+                    githubToken = data.access_token;
+                    sessionStorage.setItem('github_token', githubToken);
+                    
+                    // Clear the URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    document.getElementById('content').classList.remove('hidden');
+                    document.getElementById('login').classList.add('hidden');
+                    loadConfigurations();
+                } catch (error) {
+                    console.error('Auth error:', error);
+                    alert('Authentication failed. Please try logging in again.');
+                }
             } else {
                 checkAuth();
             }
@@ -142,12 +165,21 @@
         // Add new configuration
         async function addConfiguration(config) {
             try {
+                if (!githubToken) {
+                    throw new Error('Not authenticated');
+                }
+
                 const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
                     headers: {
-                        'Authorization': `token ${githubToken}`,
+                        'Authorization': `Bearer ${githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+
                 const data = await response.json();
                 const currentContent = JSON.parse(atob(data.content));
                 
@@ -160,45 +192,67 @@
                     collectionName: config.collectionName
                 });
 
-                await updateConfigFile(currentContent, data.sha);
+                const updateResponse = await updateConfigFile(currentContent, data.sha);
+                if (!updateResponse.ok) {
+                    throw new Error('Failed to update configuration');
+                }
+
+                alert('Configuration added successfully!');
                 loadConfigurations();
             } catch (error) {
                 console.error('Error adding configuration:', error);
+                alert(`Failed to add configuration: ${error.message}`);
             }
         }
 
         // Update config file
         async function updateConfigFile(content, sha) {
-            try {
-                await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${githubToken}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    },
-                    body: JSON.stringify({
-                        message: 'Update BTC tracker configuration',
-                        content: btoa(JSON.stringify(content, null, 2)),
-                        sha: sha
-                    })
-                });
-            } catch (error) {
-                console.error('Error updating config file:', error);
+            return fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${githubToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    message: 'Update BTC tracker configuration',
+                    content: btoa(JSON.stringify(content, null, 2)),
+                    sha: sha
+                })
+            });
+        }
+
+        // Add this near the top of your script
+        function showLoading(show) {
+            const button = document.querySelector('#configForm button[type="submit"]');
+            if (show) {
+                button.disabled = true;
+                button.textContent = 'Adding...';
+            } else {
+                button.disabled = false;
+                button.textContent = 'Add Configuration';
             }
         }
 
-        // Form submission
+        // Update the form submission handler
         document.getElementById('configForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = {
-                name: document.getElementById('configName').value,
-                figmaFileKey: document.getElementById('figmaFileKey').value,
-                figmaToken: document.getElementById('figmaToken').value,
-                collectionName: document.getElementById('collectionName').value,
-                interval: document.getElementById('interval').value
-            };
-            await addConfiguration(formData);
-            e.target.reset();
+            showLoading(true);
+            try {
+                const formData = {
+                    name: document.getElementById('configName').value,
+                    figmaFileKey: document.getElementById('figmaFileKey').value,
+                    figmaToken: document.getElementById('figmaToken').value,
+                    collectionName: document.getElementById('collectionName').value,
+                    interval: document.getElementById('interval').value
+                };
+                await addConfiguration(formData);
+                e.target.reset();
+            } catch (error) {
+                console.error('Form submission error:', error);
+                alert(`Failed to submit form: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
         });
 
         // Initialize
