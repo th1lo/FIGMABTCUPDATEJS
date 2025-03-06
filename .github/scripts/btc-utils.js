@@ -7,11 +7,28 @@ export async function getBTCPrice() {
     if (response.data && response.data.RAW) {
       const priceData = response.data.RAW;
       return {
-        price: priceData.PRICE.toFixed(2),
-        change24h: priceData.CHANGE24HOUR.toFixed(2),
-        changePct24h: priceData.CHANGEPCT24HOUR.toFixed(2),
-        high24h: priceData.HIGH24HOUR.toFixed(2),
-        low24h: priceData.LOW24HOUR.toFixed(2),
+        price: priceData.PRICE.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }),
+        change24h: priceData.CHANGE24HOUR.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          signDisplay: 'exceptZero'
+        }),
+        changePct24h: priceData.CHANGEPCT24HOUR.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+          signDisplay: 'exceptZero'
+        }),
+        high24h: priceData.HIGH24HOUR.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }),
+        low24h: priceData.LOW24HOUR.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }),
         lastUpdate: new Date(priceData.LASTUPDATE * 1000).toLocaleString(),
         market: priceData.LASTMARKET
       };
