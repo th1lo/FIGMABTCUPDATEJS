@@ -1,108 +1,53 @@
 # Figma Bitcoin Price Update Script
 
-> Automatically update Bitcoin prices in your Figma file using CoinGecko API data
+> Automatically update Bitcoin prices in your Figma files using GitHub Actions
 
-This script fetches the current Bitcoin price from CoinGecko and updates a specific string variable ("Current") in your Figma file at configurable intervals.
+## Features
 
-## Prerequisites
+- Update multiple Figma files with Bitcoin price data
+- Configure different update intervals (5, 15, or 30 minutes)
+- Web interface for managing configurations
+- Secure storage of Figma tokens
+- Automatic updates via GitHub Actions
 
-- Node.js (v14 or higher)
-- npm (Node package manager)
-- Figma personal access token
-- Figma file key
-- CoinGecko API access (free tier)
+## Setup
 
-## Quick Start
-
-1. Clone the repository:
-
-    ```bash
-    git clone https://github.com/yourusername/figma-btc-price-update.git
-    cd figma-btc-price-update
-    ```
-
-2. Install dependencies:
-
-    ```bash
-    npm install
-    ```
-
-3. Configure environment variables:
-Create a `.env` file in the root directory:
-
-    ```env
-    # Figma API Token
-    FIGMA_TOKEN=your_figma_personal_access_token
-
-    # Figma File Key
-    FIGMA_FILE_KEY=your_figma_file_key
-
-    # Bitcoin Price API URL
-    BTC_API_URL=https://min-api.cryptocompare.com/data/generateAvg?fsym=BTC&tsym=EUR&e=coinbase
-
-    # Collection Name
-    FIGMA_COLLECTION_NAME=BTC Price Tracker
-
-    # Default Mode Name (Value in Figma)
-    FIGMA_MODE_NAME=Value
-
-    # Enable detailed debug logging (true/false)
-    DEBUG=false
-    ```
-
-## Configuration
-
-### Update Interval
-
-Set how often the script fetches and updates the Bitcoin price by modifying `intervalInMinutes` in the script:
-
-```javascript
-const intervalInMinutes = 5;  // Default: 5 minutes
-```
-
-### Figma Setup Requirements
-
-- Create a variable collection named "BTC"
-- Add a string variable named "Current" within the collection
+1. Fork this repository
+2. Enable GitHub Pages in your fork's settings
+3. Create a GitHub OAuth App:
+   - Go to GitHub Developer Settings
+   - Create a new OAuth App
+   - Set homepage URL to your GitHub Pages URL
+   - Set callback URL to the same
+4. Update the following in docs/index.html:
+   - GITHUB_CLIENT_ID
+   - REPO_OWNER
+   - REPO_NAME
 
 ## Usage
 
-Start the script:
+1. Visit your GitHub Pages URL
+2. Login with GitHub
+3. Add new configurations:
+   - Enter Figma file details
+   - Choose update interval
+   - Save configuration
 
-```bash
-node update-btc-price.js
-```
+## Configuration Options
 
-The script will:
+Each configuration includes:
+- Figma file key
+- Figma access token
+- Collection name
+- Update interval (5, 15, or 30 minutes)
+- Enabled/disabled status
 
-- Fetch the latest Bitcoin price from CoinGecko
-- Update the "Current" variable in your Figma file
-- Repeat this process at your configured interval
-- Log all actions and responses for monitoring
+## Security
+
+- Figma tokens are stored in the repository
+- Access is controlled via GitHub authentication
+- Only repository owners can manage configurations
 
 ## Troubleshooting
 
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| 400 Error | Ensure the variable isn't bound to a text node with a shared font |
-| Update Failed | Verify your Figma token has edit access to the file |
-| API Issues | Check the logs for detailed API responses |
-
-### Logs
-
-The script provides detailed logging for:
-
-- Current variable value
-- Figma API responses
-- Update confirmations
-- Any errors that occur
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+See the Actions tab for execution logs and errors.

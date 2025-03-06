@@ -1,0 +1,38 @@
+name: BTC Price Update
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # Every 5 minutes
+    - cron: '*/15 * * * *'  # Every 15 minutes
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  workflow_dispatch:        # Manual trigger
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        working-directory: .github/scripts
+        run: npm ci
+      
+      - name: Get current time
+        id: time
+        run: echo "time=$(date +%M)" >> $GITHUB_OUTPUT
+      
+      - name: Read configurations
+        id: config
+        run: |
+          CONFIG=$(cat .github/btc-tracker-config.json)
+          echo "config=$CONFIG" >> $GITHUB_OUTPUT
+
+      - name: Update Figma files
+        env:
+          CONFIGS: ${{ steps.config.outputs.config }}
+          CURRENT_MINUTE: ${{ steps.time.outputs.time }}
+        run: node .github/scripts/update-multiple.js 

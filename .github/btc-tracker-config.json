@@ -1,0 +1,20 @@
+{
+  "configurations": [
+    {
+      "id": "config1",
+      "enabled": true,
+      "interval": 5,
+      "figmaFileKey": "xxx",
+      "figmaToken": "encrypted_token",
+      "collectionName": "BTC Price Tracker 1"
+    },
+    {
+      "id": "config2",
+      "enabled": false,
+      "interval": 15,
+      "figmaFileKey": "yyy",
+      "figmaToken": "encrypted_token",
+      "collectionName": "BTC Price Tracker 2"
+    }
+  ]
+} 
