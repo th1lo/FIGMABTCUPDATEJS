@@ -100,13 +100,20 @@ async function getOrCreateCollection(config) {
   }
 }
 
+// Add decryption helper
+function decryptToken(encrypted) {
+  return atob(encrypted);
+}
+
+// Update the updateVariables function to decrypt the token
 async function updateVariables(config, collectionId, priceData) {
   try {
+    const decryptedToken = decryptToken(config.figmaToken);
     const collectionsResponse = await axios.get(
       `https://api.figma.com/v1/files/${config.figmaFileKey}/variables/local`,
       {
         headers: {
-          'X-FIGMA-TOKEN': config.figmaToken
+          'X-FIGMA-TOKEN': decryptedToken
         }
       }
     );
@@ -155,7 +162,7 @@ async function updateVariables(config, collectionId, priceData) {
       updatePayload,
       {
         headers: {
-          'X-FIGMA-TOKEN': config.figmaToken
+          'X-FIGMA-TOKEN': decryptedToken
         }
       }
     );
