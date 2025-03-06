@@ -7,6 +7,14 @@
       "figmaFileKey": "9N6NWIka6OEPUD0MjanEj5",
       "figmaToken": "ZmlnZF9FejdlRk9DUGNvQXJmOHFTcF9DNDM4elRNel9XUFl2azY0SFIxdDlY",
       "collectionName": "BTC"
+    },
+    {
+      "id": "BTC WIN",
+      "enabled": true,
+      "interval": 5,
+      "figmaFileKey": "T87E7e8ViRuv6PoVdw092Z",
+      "figmaToken": "ZmlnZF9oMzRqUkVHNnFiWmdFUWJVcGVGWDZYUC1rR0dpcGUzSjBLbDJVQUpl",
+      "collectionName": "BTC"
     }
   ]
 }
