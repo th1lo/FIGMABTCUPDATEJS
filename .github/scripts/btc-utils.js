@@ -139,7 +139,7 @@ function decryptToken(encrypted) {
   return atob(encrypted);
 }
 
-// Update the updateVariables function to decrypt the token
+// Update the updateVariables function
 async function updateVariables(config, collectionId, priceData) {
   try {
     const decryptedToken = decryptToken(config.figmaToken);
@@ -160,53 +160,80 @@ async function updateVariables(config, collectionId, priceData) {
     console.log('📝 Preparing to update variables...');
     const defaultModeId = collection.defaultModeId;
 
-    // Define variables to update
-    const variableDefinitions = [
-      { name: 'Price', value: priceData.price },
-      { name: 'Change 24h', value: priceData.change24h },
-      { name: 'Change % 24h', value: `${priceData.changePct24h}%` },
-      { name: 'High 24h', value: priceData.high24h },
-      { name: 'Low 24h', value: priceData.low24h },
-      { name: 'Last Update', value: priceData.lastUpdate },
-      { name: 'Market', value: priceData.market }
-    ];
-
     // Find existing variables
     const existingVariables = Object.values(collectionsResponse.data.meta.variables)
       .filter(v => v.variableCollectionId === collectionId);
 
     console.log('Found existing variables:', existingVariables.map(v => v.name).join(', ') || 'none');
 
-    // Update variables
-    const updateResponse = await axios.post(
-      `https://api.figma.com/v1/files/${config.figmaFileKey}/variables`,
-      {
-        variables: variableDefinitions.map(def => ({
-          action: existingVariables.find(v => v.name === def.name) ? 'UPDATE' : 'CREATE',
-          id: existingVariables.find(v => v.name === def.name)?.id || `temp_${def.name.toLowerCase()}_id`,
-          name: def.name,
-          variableCollectionId: collectionId,
-          resolvedType: 'STRING'
-        })),
-        variableModeValues: variableDefinitions.map(def => ({
-          variableId: existingVariables.find(v => v.name === def.name)?.id || `temp_${def.name.toLowerCase()}_id`,
+    // Define variables to update or create
+    const variableDefinitions = [
+      { name: 'Price', type: 'STRING', value: priceData.price },
+      { name: 'Change 24h', type: 'STRING', value: priceData.change24h },
+      { name: 'Change % 24h', type: 'STRING', value: `${priceData.changePct24h}%` },
+      { name: 'High 24h', type: 'STRING', value: priceData.high24h },
+      { name: 'Low 24h', type: 'STRING', value: priceData.low24h },
+      { name: 'Last Update', type: 'STRING', value: priceData.lastUpdate },
+      { name: 'Market', type: 'STRING', value: priceData.market }
+    ];
+
+    // Prepare the update payload according to the API documentation
+    const updatePayload = {
+      // Create or update variable definitions
+      variables: variableDefinitions.map(def => {
+        const existingVar = existingVariables.find(v => v.name === def.name);
+        if (!existingVar) {
+          // Create new variable
+          return {
+            action: 'CREATE',
+            id: `temp_${def.name.toLowerCase().replace(/\s+/g, '_')}_id`,
+            name: def.name,
+            resolvedType: def.type,
+            variableCollectionId: collectionId,
+            scopes: ['TEXT_CONTENT'], // Scope for string variables
+            codeSyntax: {
+              WEB: def.name.toLowerCase().replace(/\s+/g, '_'),
+            }
+          };
+        }
+        return null; // Skip existing variables
+      }).filter(Boolean),
+
+      // Update all variable values
+      variableModeValues: variableDefinitions.map(def => {
+        const existingVar = existingVariables.find(v => v.name === def.name);
+        return {
+          variableId: existingVar ? existingVar.id : `temp_${def.name.toLowerCase().replace(/\s+/g, '_')}_id`,
           modeId: defaultModeId,
           value: def.value.toString()
-        }))
-      },
-      {
-        headers: {
-          'X-FIGMA-TOKEN': decryptedToken
+        };
+      })
+    };
+
+    // Only send the request if there are changes to make
+    if (updatePayload.variables.length > 0 || updatePayload.variableModeValues.length > 0) {
+      console.log(`Updating ${updatePayload.variableModeValues.length} variable values...`);
+      
+      const updateResponse = await axios.post(
+        `https://api.figma.com/v1/files/${config.figmaFileKey}/variables`,
+        updatePayload,
+        {
+          headers: {
+            'X-FIGMA-TOKEN': decryptedToken
+          }
         }
+      );
+
+      if (!updateResponse.data) {
+        throw new Error('No response from Figma API');
       }
-    );
 
-    if (!updateResponse.data) {
-      throw new Error('No response from Figma API');
+      console.log('✅ Variables updated successfully');
+      return true;
+    } else {
+      console.log('⚠️ No variables to update');
+      return false;
     }
-
-    console.log('✅ Variables updated successfully');
-    return true;
   } catch (error) {
     console.error('❌ Variable update error:', {
       status: error.response?.status,
