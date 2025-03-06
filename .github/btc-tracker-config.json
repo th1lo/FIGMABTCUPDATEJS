@@ -2,7 +2,7 @@
   "configurations": [
     {
       "id": "config1",
-      "enabled": true,
+      "enabled": false,
       "interval": 5,
       "figmaFileKey": "xxx",
       "figmaToken": "encrypted_token",
@@ -17,4 +17,4 @@
       "collectionName": "BTC Price Tracker 2"
     }
   ]
-} 
+}
