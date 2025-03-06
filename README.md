@@ -16,35 +16,37 @@ This script fetches the current Bitcoin price from CoinGecko and updates a speci
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/yourusername/figma-btc-price-update.git
-cd figma-btc-price-update
-```
+    ```bash
+    git clone https://github.com/yourusername/figma-btc-price-update.git
+    cd figma-btc-price-update
+    ```
 
 2. Install dependencies:
 
-```bash
-npm install
-```
+    ```bash
+    npm install
+    ```
 
 3. Configure environment variables:
 Create a `.env` file in the root directory:
 
-```env
-PERSONAL_ACCESS_TOKEN=your_figma_personal_access_token
-FILE_KEY=your_figma_file_key
-```
+    ```env
+    PERSONAL_ACCESS_TOKEN=your_figma_personal_access_token
+    FILE_KEY=your_figma_file_key
+    ```
 
 ## Configuration
 
 ### Update Interval
+
 Set how often the script fetches and updates the Bitcoin price by modifying `intervalInMinutes` in the script:
 
-```javascript
-const intervalInMinutes = 5;  // Default: 5 minutes
-```
+    ```javascript
+    const intervalInMinutes = 5;  // Default: 5 minutes
+    ```
 
 ### Figma Setup Requirements
+
 - Create a variable collection named "BTC"
 - Add a string variable named "Current" within the collection
 
@@ -52,11 +54,12 @@ const intervalInMinutes = 5;  // Default: 5 minutes
 
 Start the script:
 
-```bash
-node update-btc-price.js
-```
+    ```bash
+    node update-btc-price.js
+    ```
 
 The script will:
+
 - Fetch the latest Bitcoin price from CoinGecko
 - Update the "Current" variable in your Figma file
 - Repeat this process at your configured interval
@@ -73,7 +76,9 @@ The script will:
 | API Issues | Check the logs for detailed API responses |
 
 ### Logs
+
 The script provides detailed logging for:
+
 - Current variable value
 - Figma API responses
 - Update confirmations
