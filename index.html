@@ -202,7 +202,17 @@
             }
         }
 
-        // Update the addConfiguration function with better error handling
+        // Add these encryption helper functions
+        function encryptToken(token) {
+            // Simple base64 encoding for now - in production you'd want stronger encryption
+            return btoa(token);
+        }
+
+        function decryptToken(encrypted) {
+            return atob(encrypted);
+        }
+
+        // Update the addConfiguration function to encrypt the Figma token
         async function addConfiguration(config) {
             try {
                 if (!githubToken) {
@@ -221,12 +231,10 @@
                 let sha;
 
                 if (response.status === 404) {
-                    // File doesn't exist, create initial content
                     currentContent = {
                         configurations: []
                     };
                 } else if (response.ok) {
-                    // File exists, get current content
                     const data = await response.json();
                     currentContent = JSON.parse(atob(data.content));
                     sha = data.sha;
@@ -234,13 +242,13 @@
                     throw new Error(`GitHub API error: ${response.status}`);
                 }
                 
-                // Add new configuration
+                // Add new configuration with encrypted Figma token
                 currentContent.configurations.push({
                     id: config.name,
                     enabled: true,
                     interval: parseInt(config.interval),
                     figmaFileKey: config.figmaFileKey,
-                    figmaToken: config.figmaToken,
+                    figmaToken: encryptToken(config.figmaToken),  // Encrypt the token
                     collectionName: config.collectionName
                 });
 
