@@ -28,8 +28,13 @@ jobs:
       - name: Read configurations
         id: config
         run: |
-          CONFIG=$(cat .github/btc-tracker-config.json)
-          echo "config=$CONFIG" >> $GITHUB_OUTPUT
+          content=$(cat .github/btc-tracker-config.json)
+          # Escape newlines and quotes for GitHub Actions
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          content="${content//$'"'/'\\"'}"
+          echo "config=$content" >> $GITHUB_OUTPUT
 
       - name: Update Figma files
         env:
