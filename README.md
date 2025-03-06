@@ -31,8 +31,20 @@ This script fetches the current Bitcoin price from CoinGecko and updates a speci
 Create a `.env` file in the root directory:
 
     ```env
-    PERSONAL_ACCESS_TOKEN=your_figma_personal_access_token
-    FILE_KEY=your_figma_file_key
+    # Figma API Token
+    FIGMA_TOKEN=your_figma_personal_access_token
+
+    # Figma File Key
+    FIGMA_FILE_KEY=your_figma_file_key
+
+    # Bitcoin Price API URL
+    BTC_API_URL=https://min-api.cryptocompare.com/data/generateAvg?fsym=BTC&tsym=EUR&e=coinbase
+
+    # Collection Name
+    FIGMA_COLLECTION_NAME=BTC Price Tracker
+
+    # Default Mode Name (Value in Figma)
+    FIGMA_MODE_NAME=Value
     ```
 
 ## Configuration
