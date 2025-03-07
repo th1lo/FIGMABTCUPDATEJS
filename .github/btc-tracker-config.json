@@ -2,7 +2,7 @@
   "configurations": [
     {
       "id": "LOLOLOLOL",
-      "enabled": false,
+      "enabled": true,
       "interval": 5,
       "figmaFileKey": "9N6NWIka6OEPUD0MjanEj5",
       "figmaToken": "ZmlnZF9FejdlRk9DUGNvQXJmOHFTcF9DNDM4elRNel9XUFl2azY0SFIxdDlY",
