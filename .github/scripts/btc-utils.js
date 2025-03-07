@@ -5,7 +5,7 @@ const timestamp = () => {
   const now = new Date();
   return now.toLocaleString('en-US', {
     hour12: false,
-    timeZone: 'UTC',
+    timeZone: 'Europe/Berlin',
     timeZoneName: 'short'
   });
 };
@@ -41,7 +41,7 @@ export async function getBTCPrice() {
         }),
         lastUpdate: new Date(priceData.LASTUPDATE * 1000).toLocaleString('en-US', {
           hour12: false,
-          timeZone: 'UTC',
+          timeZone: 'Europe/Berlin',
           timeZoneName: 'short'
         }),
         market: priceData.LASTMARKET

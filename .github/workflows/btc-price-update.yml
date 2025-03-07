@@ -10,6 +10,8 @@ jobs:
   update-prices:
     name: Update BTC Prices (${{ github.event_name }})
     runs-on: ubuntu-latest
+    env:
+      TZ: 'Europe/Berlin'  # Set timezone for the job
     steps:
       - uses: actions/checkout@v3
       
