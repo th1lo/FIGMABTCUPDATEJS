@@ -1,5 +1,15 @@
 import axios from 'axios';
 
+// Add timestamp function at the top
+const timestamp = () => {
+  const now = new Date();
+  return now.toLocaleString('en-US', {
+    hour12: false,
+    timeZone: 'UTC',
+    timeZoneName: 'short'
+  });
+};
+
 export async function getBTCPrice() {
   try {
     const response = await axios.get('https://min-api.cryptocompare.com/data/generateAvg?fsym=BTC&tsym=EUR&e=coinbase');
@@ -29,13 +39,17 @@ export async function getBTCPrice() {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         }),
-        lastUpdate: new Date(priceData.LASTUPDATE * 1000).toLocaleString(),
+        lastUpdate: new Date(priceData.LASTUPDATE * 1000).toLocaleString('en-US', {
+          hour12: false,
+          timeZone: 'UTC',
+          timeZoneName: 'short'
+        }),
         market: priceData.LASTMARKET
       };
     }
     return null;
   } catch (error) {
-    console.error('Error fetching BTC price:', error.message);
+    console.error(`[${timestamp()}] Error fetching BTC price:`, error.message);
     return null;
   }
 }

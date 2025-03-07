@@ -7,7 +7,15 @@ import chalk from 'chalk';
 dotenv.config();
 
 // Add timestamp to logs
-const timestamp = () => chalk.gray(`[${new Date().toLocaleTimeString()}]`);
+const timestamp = () => {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-US', {
+    hour12: false,
+    timeZone: 'Europe/Berlin',
+    timeZoneName: 'short'
+  });
+  return chalk.gray(`[${timeString}]`);
+};
 
 // Spinner instance
 const spinner = ora({
@@ -45,9 +53,8 @@ const errorLog = (message, error) => {
 // Helper function to get the current BTC price
 const getBTCPrice = async () => {
   try {
-    const response = await axios.get(process.env.BTC_API_URL);
-    debugLog('BTC API Response:', response.data);
-
+    const response = await axios.get('https://min-api.cryptocompare.com/data/generateAvg?fsym=BTC&tsym=EUR&e=coinbase');
+    
     if (response.data && response.data.RAW) {
       const priceData = response.data.RAW;
       return {
@@ -56,7 +63,11 @@ const getBTCPrice = async () => {
         changePct24h: priceData.CHANGEPCT24HOUR.toFixed(2),
         high24h: priceData.HIGH24HOUR.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'),
         low24h: priceData.LOW24HOUR.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,'),
-        lastUpdate: new Date(priceData.LASTUPDATE * 1000).toLocaleString(),
+        lastUpdate: new Date(priceData.LASTUPDATE * 1000).toLocaleString('en-US', {
+          hour12: false,
+          timeZone: 'Europe/Berlin',
+          timeZoneName: 'short'
+        }),
         market: priceData.LASTMARKET
       };
     } else {
@@ -163,50 +174,96 @@ const createOrUpdateVariables = async (collectionId, priceData) => {
     const defaultModeId = collection.defaultModeId;
     debugLog('Using default mode ID:', defaultModeId);
 
-    // Define all variables we want to create/update
-    const variableDefinitions = [
-      { name: 'Price', value: priceData.price },
-      { name: 'Change24h', value: `${priceData.change24h > 0 ? '+' : ''}${priceData.change24h}` },
-      { name: 'ChangePct24h', value: `${priceData.changePct24h > 0 ? '+' : ''}${priceData.changePct24h}%` },
-      { name: 'High24h', value: priceData.high24h },
-      { name: 'Low24h', value: priceData.low24h },
-      { name: 'LastUpdate', value: priceData.lastUpdate },
-      { name: 'Market', value: priceData.market }
-    ];
-
     // Find existing variables
     const existingVariables = Object.values(collectionsResponse.data.meta.variables)
       .filter(v => v.variableCollectionId === collectionId);
 
-    // Prepare the update payload
-    const data = {
-      variables: variableDefinitions.map(def => {
-        const existing = existingVariables.find(v => v.name === def.name);
-        return {
-          action: existing ? 'UPDATE' : 'CREATE',
-          id: existing?.id || `temp_${def.name.toLowerCase()}_id`,
+    debugLog('Found existing variables:', existingVariables.map(v => v.name).join(', ') || 'none');
+
+    // Define variables to update
+    const variableDefinitions = [
+      { name: 'Price', value: priceData.price },
+      { name: 'Change 24h', value: priceData.change24h },
+      { name: 'Change % 24h', value: `${priceData.changePct24h}%` },
+      { name: 'High 24h', value: priceData.high24h },
+      { name: 'Low 24h', value: priceData.low24h },
+      { name: 'Last Update', value: priceData.lastUpdate },
+      { name: 'Market', value: priceData.market }
+    ];
+
+    // Step 1: Create any missing variables
+    const missingVariables = variableDefinitions.filter(def => 
+      !existingVariables.some(v => v.name === def.name)
+    );
+
+    if (missingVariables.length > 0) {
+      debugLog('Creating missing variables:', missingVariables.map(v => v.name).join(', '));
+      const createPayload = {
+        variables: missingVariables.map(def => ({
+          action: 'CREATE',
+          id: `temp_${def.name.toLowerCase().replace(/\s+/g, '_')}_id`,
           name: def.name,
+          resolvedType: 'STRING',
           variableCollectionId: collectionId,
-          resolvedType: 'STRING'
-        };
-      }),
+          scopes: ['TEXT_CONTENT'],
+          codeSyntax: {
+            WEB: def.name.toLowerCase().replace(/\s+/g, '_')
+          }
+        }))
+      };
+
+      await axios.post(
+        `https://api.figma.com/v1/files/${process.env.FIGMA_FILE_KEY}/variables`,
+        createPayload,
+        {
+          headers: {
+            'X-FIGMA-TOKEN': process.env.FIGMA_TOKEN
+          }
+        }
+      );
+
+      // Refresh variable list after creation
+      const updatedResponse = await axios.get(
+        `https://api.figma.com/v1/files/${process.env.FIGMA_FILE_KEY}/variables/local`,
+        {
+          headers: {
+            'X-FIGMA-TOKEN': process.env.FIGMA_TOKEN
+          }
+        }
+      );
+      existingVariables.push(...Object.values(updatedResponse.data.meta.variables)
+        .filter(v => v.variableCollectionId === collectionId));
+    }
+
+    // Step 2: Update variable values in a separate request
+    const updatePayload = {
       variableModeValues: variableDefinitions.map(def => {
-        const existing = existingVariables.find(v => v.name === def.name);
+        const variable = existingVariables.find(v => v.name === def.name);
+        if (!variable) {
+          debugLog(`Warning: Variable ${def.name} not found for update`);
+          return null;
+        }
         return {
+          variableId: variable.id,
           modeId: defaultModeId,
-          variableId: existing?.id || `temp_${def.name.toLowerCase()}_id`,
           value: def.value.toString()
         };
-      })
+      }).filter(Boolean)
     };
 
-    debugLog('Updating variables with payload:', JSON.stringify(data, null, 2));
-    const response = await axios.post(`https://api.figma.com/v1/files/${process.env.FIGMA_FILE_KEY}/variables`, data, {
-      headers: {
-        'X-FIGMA-TOKEN': process.env.FIGMA_TOKEN
+    debugLog('Updating variable values:', JSON.stringify(updatePayload, null, 2));
+    const updateResponse = await axios.post(
+      `https://api.figma.com/v1/files/${process.env.FIGMA_FILE_KEY}/variables`,
+      updatePayload,
+      {
+        headers: {
+          'X-FIGMA-TOKEN': process.env.FIGMA_TOKEN
+        }
       }
-    });
-    debugLog('Variables update response:', JSON.stringify(response.data, null, 2));
+    );
+
+    debugLog('Update response:', JSON.stringify(updateResponse.data, null, 2));
+    return true;
   } catch (error) {
     console.error('Error creating or updating variables:', {
       message: error.message,
