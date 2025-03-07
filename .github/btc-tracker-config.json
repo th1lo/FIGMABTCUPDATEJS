@@ -10,7 +10,7 @@
     },
     {
       "id": "BTC WIN",
-      "enabled": true,
+      "enabled": false,
       "interval": 5,
       "figmaFileKey": "T87E7e8ViRuv6PoVdw092Z",
       "figmaToken": "ZmlnZF9oMzRqUkVHNnFiWmdFUWJVcGVGWDZYUC1rR0dpcGUzSjBLbDJVQUpl",
