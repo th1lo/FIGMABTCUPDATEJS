@@ -16,6 +16,12 @@
             background-color: #111827;
             color: #e5e7eb;
         }
+        .status-active {
+            @apply text-green-400 bg-green-400/10;
+        }
+        .status-paused {
+            @apply text-rose-400 bg-rose-400/10;
+        }
     </style>
 </head>
 <body class="bg-gray-900">
@@ -59,8 +65,9 @@
 
         <!-- Main Content Area -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Configurations Table -->
-            <div id="configurationsContainer" class="bg-gray-800 rounded-lg shadow border border-gray-700">
+            <div class="bg-gray-900 py-10">
+                <h2 class="px-4 text-base font-semibold text-white sm:px-6 lg:px-8">BTC Price Tracker Configurations</h2>
+                
                 <!-- Empty State -->
                 <div id="emptyState" class="hidden p-12 text-center">
                     <svg class="w-24 h-24 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,18 +83,26 @@
                 </div>
 
                 <!-- Table -->
-                <table id="configTable" class="min-w-full divide-y divide-gray-700">
-                    <thead class="bg-gray-700">
+                <table id="configTable" class="mt-6 w-full whitespace-nowrap text-left">
+                    <colgroup>
+                        <col class="w-full sm:w-3/12" />
+                        <col class="lg:w-2/12" />
+                        <col class="lg:w-2/12" />
+                        <col class="lg:w-2/12" />
+                        <col class="lg:w-2/12" />
+                        <col class="lg:w-1/12" />
+                    </colgroup>
+                    <thead class="border-b border-white/10 text-sm/6 text-white">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">File</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Interval</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Last Update</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                            <th scope="col" class="py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8">Name</th>
+                            <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold sm:table-cell">File</th>
+                            <th scope="col" class="py-2 pl-0 pr-8 font-semibold">Interval</th>
+                            <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell">Last Update</th>
+                            <th scope="col" class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20">Status</th>
+                            <th scope="col" class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-6 lg:pr-8">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="configList" class="bg-gray-800 divide-y divide-gray-700">
+                    <tbody id="configList" class="divide-y divide-white/5">
                         <!-- Configurations will be listed here -->
                     </tbody>
                 </table>
@@ -241,48 +256,57 @@
                     ? config.logs[config.logs.length - 1]
                     : 'No logs available';
 
+                const statusClass = config.enabled ? 'status-active' : 'status-paused';
+                const statusText = config.enabled ? 'Active' : 'Paused';
+
                 return `
-                    <tr class="hover:bg-gray-700">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center">
-                                <div class="text-sm font-medium text-gray-300">${config.id}</div>
+                    <tr class="hover:bg-white/5">
+                        <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
+                            <div class="flex items-center gap-x-4">
+                                <div class="truncate text-sm font-medium text-white">${config.id}</div>
                             </div>
                         </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-300">${config.figmaFileKey}</div>
+                        <td class="hidden py-4 pl-0 pr-8 sm:table-cell">
+                            <div class="flex gap-x-3">
+                                <div class="font-mono text-sm text-gray-400">${config.figmaFileKey}</div>
+                            </div>
                         </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-300">Every ${config.interval} minutes</div>
+                        <td class="py-4 pl-0 pr-8 text-sm text-gray-400">
+                            Every ${config.interval} minutes
                         </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm text-gray-300">${lastUpdated}</div>
+                        <td class="hidden py-4 pl-0 pr-8 text-sm text-gray-400 md:table-cell">
+                            ${lastUpdated}
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${config.enabled ? 'bg-green-700 text-green-300' : 'bg-gray-700 text-gray-300'}">
-                                ${config.enabled ? 'Active' : 'Paused'}
-                            </span>
+                        <td class="py-4 pl-0 pr-4 sm:pr-8 lg:pr-20">
+                            <div class="flex items-center gap-x-2">
+                                <div class="${statusClass} flex-none rounded-full p-1">
+                                    <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
+                                </div>
+                                <div class="text-sm text-white">${statusText}</div>
+                            </div>
                         </td>
-                        <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                            <button onclick="toggleConfig('${config.id}')" 
-                                class="text-orange-400 hover:text-orange-300">
-                                ${config.enabled ? 'Pause' : 'Start'}
-                            </button>
-                            <button onclick="editConfig('${config.id}')" 
-                                class="text-gray-300 hover:text-gray-100">
-                                Edit
-                            </button>
-                            <button onclick="deleteConfig('${config.id}')" 
-                                class="text-red-400 hover:text-red-300">
-                                Delete
-                            </button>
+                        <td class="py-4 pl-0 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
+                            <div class="flex justify-end gap-x-3">
+                                <button onclick="toggleConfig('${config.id}')" 
+                                    class="text-orange-400 hover:text-orange-300">
+                                    ${config.enabled ? 'Pause' : 'Start'}
+                                </button>
+                                <button onclick="editConfig('${config.id}')" 
+                                    class="text-gray-400 hover:text-gray-300">
+                                    Edit
+                                </button>
+                                <button onclick="deleteConfig('${config.id}')" 
+                                    class="text-rose-400 hover:text-rose-300">
+                                    Delete
+                                </button>
+                            </div>
                         </td>
                     </tr>
-                    <tr class="bg-gray-700">
-                        <td colspan="6" class="px-6 py-4">
-                            <div class="text-sm text-gray-300">
-                                <strong>Last Update Log:</strong>
-                                <pre class="mt-2 text-xs bg-gray-800 p-2 rounded overflow-auto max-h-20">${lastLog}</pre>
+                    <tr class="bg-gray-800/50">
+                        <td colspan="6" class="px-4 py-4 sm:px-6 lg:px-8">
+                            <div class="text-sm text-gray-400">
+                                <strong class="text-white">Last Update Log:</strong>
+                                <pre class="mt-2 text-xs bg-gray-800/50 p-2 rounded overflow-auto max-h-20 border border-white/10">${lastLog}</pre>
                             </div>
                         </td>
                     </tr>
