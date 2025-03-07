@@ -10,7 +10,7 @@
     },
     {
       "id": "Viess to Private",
-      "enabled": true,
+      "enabled": false,
       "interval": 5,
       "figmaFileKey": "T87E7e8ViRuv6PoVdw092Z",
       "figmaToken": "ZmlnZF9FejdlRk9DUGNvQXJmOHFTcF9DNDM4elRNel9XUFl2azY0SFIxdDlY",
