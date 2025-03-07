@@ -7,6 +7,16 @@
       "figmaFileKey": "9N6NWIka6OEPUD0MjanEj5",
       "figmaToken": "ZmlnZF9FejdlRk9DUGNvQXJmOHFTcF9DNDM4elRNel9XUFl2azY0SFIxdDlY",
       "collectionName": "BTC"
+    },
+    {
+      "id": "Viess to Private",
+      "enabled": true,
+      "interval": 5,
+      "figmaFileKey": "T87E7e8ViRuv6PoVdw092Z",
+      "figmaToken": "ZmlnZF9FejdlRk9DUGNvQXJmOHFTcF9DNDM4elRNel9XUFl2azY0SFIxdDlY",
+      "collectionName": "BTC",
+      "lastUpdated": "2025-03-07T09:59:40.476Z",
+      "logs": []
     }
   ]
 }
