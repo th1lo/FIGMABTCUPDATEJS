@@ -3,289 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTC Price Tracker Manager</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Add Heroicons for better icons -->
-    <link href="https://unpkg.com/@heroicons/v1/outline/style.css" rel="stylesheet">
-    <style>
-        :root {
-            --bitcoin-orange: #f7931a;
-            --bitcoin-orange-dark: #e07d0e;
-        }
-        body {
-            background-color: #111827;
-            color: #e5e7eb;
-        }
-        .status-active {
-            @apply text-green-400 bg-green-400/10;
-        }
-        .status-paused {
-            @apply text-rose-400 bg-rose-400/10;
-        }
-    </style>
+    <title>BTC Price Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900">
-    <!-- Auth Screen -->
-    <div id="login" class="fixed inset-0 bg-gray-900 flex items-center justify-center">
-        <div class="bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full mx-4 border border-gray-700">
-            <h2 class="text-2xl font-bold mb-6 text-white">GitHub Authentication</h2>
-            <ol class="list-decimal list-inside space-y-3 mb-6 text-gray-300">
-                <li>Go to GitHub → Settings → <a href="https://github.com/settings/tokens" target="_blank" class="text-orange-400 hover:text-orange-300 hover:underline">Personal Access Tokens</a></li>
-                <li>Generate new token (classic)</li>
-                <li>Name it "BTC Price Tracker"</li>
-                <li>Select the "repo" scope</li>
-                <li>Copy the generated token</li>
-            </ol>
-            <div class="space-y-4">
-                <input type="password" id="pat" placeholder="Paste your token here" 
-                    class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-gray-400">
-                <button onclick="authenticateWithToken()" 
-                    class="w-full bg-orange-500 text-white rounded-lg p-3 hover:bg-orange-600 transition-colors">
-                    Authenticate
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div id="content" class="hidden min-h-screen">
-        <!-- Header -->
-        <header class="bg-gray-800 shadow border-b border-gray-700">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-white">BTC Price Tracker</h1>
-                <button onclick="openModal()" 
-                    class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Add Configuration
-                </button>
-            </div>
-        </header>
-
-        <!-- Main Content Area -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="bg-gray-900 py-10">
-                <h2 class="px-4 text-base font-semibold text-white sm:px-6 lg:px-8">BTC Price Tracker Configurations</h2>
-                
-                <!-- Empty State -->
-                <div id="emptyState" class="hidden p-12 text-center">
-                    <svg class="w-24 h-24 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    <h3 class="mt-4 text-lg font-medium text-white">No configurations yet</h3>
-                    <p class="mt-1 text-gray-400">Get started by adding your first configuration.</p>
+<body>
+    <!-- Update the header section -->
+    <header class="bg-gray-900 border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="min-w-0 flex-1">
+                    <h2 class="text-2xl/7 font-bold text-white sm:truncate sm:text-3xl sm:tracking-tight">
+                        BTC Price Tracker
+                    </h2>
+                </div>
+                <div class="mt-4 flex md:ml-4 md:mt-0">
                     <button onclick="openModal()" 
-                        class="mt-6 bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors">
+                        class="inline-flex items-center rounded-md bg-orange-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
                         Add Configuration
                     </button>
                 </div>
-
-                <!-- Table -->
-                <table id="configTable" class="mt-6 w-full whitespace-nowrap text-left">
-                    <colgroup>
-                        <col class="w-full sm:w-3/12" />
-                        <col class="lg:w-2/12" />
-                        <col class="lg:w-2/12" />
-                        <col class="lg:w-2/12" />
-                        <col class="lg:w-2/12" />
-                        <col class="lg:w-1/12" />
-                    </colgroup>
-                    <thead class="border-b border-white/10 text-sm/6 text-white">
-                        <tr>
-                            <th scope="col" class="py-2 pl-4 pr-8 font-semibold sm:pl-6 lg:pl-8">Name</th>
-                            <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold sm:table-cell">File</th>
-                            <th scope="col" class="py-2 pl-0 pr-8 font-semibold">Interval</th>
-                            <th scope="col" class="hidden py-2 pl-0 pr-8 font-semibold md:table-cell">Last Update</th>
-                            <th scope="col" class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-8 sm:text-left lg:pr-20">Status</th>
-                            <th scope="col" class="py-2 pl-0 pr-4 text-right font-semibold sm:pr-6 lg:pr-8">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="configList" class="divide-y divide-white/5">
-                        <!-- Configurations will be listed here -->
-                    </tbody>
-                </table>
             </div>
-        </main>
+        </div>
+    </header>
 
-        <!-- Modal -->
-        <div id="configModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center">
-            <div class="bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 border border-gray-700">
-                <div class="px-6 py-4 border-b border-gray-700">
-                    <h3 class="text-lg font-medium text-white">Add New Configuration</h3>
+    <!-- Update the main content area -->
+    <main class="max-w-7xl mx-auto">
+        <div class="bg-gray-900 py-10">
+            <div class="px-4 sm:px-6 lg:px-8">
+                <div class="sm:flex sm:items-center">
+                    <div class="sm:flex-auto">
+                        <h1 class="text-base font-semibold leading-7 text-white">Configurations</h1>
+                        <p class="mt-2 text-sm text-gray-300">A list of all BTC price tracker configurations including their status, update frequency, and latest logs.</p>
+                    </div>
                 </div>
-                <form id="configForm" class="px-6 py-4">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Configuration Name</label>
-                            <input type="text" id="configName" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Figma File Key</label>
-                            <input type="text" id="figmaFileKey" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Figma Access Token</label>
-                            <input type="password" id="figmaToken" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Collection Name</label>
-                            <input type="text" id="collectionName" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" required>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Update Interval</label>
-                            <select id="interval" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" required>
-                                <option value="5">Every 5 minutes</option>
-                                <option value="15">Every 15 minutes</option>
-                                <option value="30">Every 30 minutes</option>
-                            </select>
+
+                <!-- Empty State with updated styling -->
+                <div id="emptyState" class="hidden mt-8 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-semibold text-white">No configurations</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new configuration.</p>
+                    <div class="mt-6">
+                        <button onclick="openModal()" 
+                            class="inline-flex items-center rounded-md bg-orange-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500">
+                            <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
+                            </svg>
+                            New Configuration
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table with updated styling -->
+                <div class="mt-8 flow-root">
+                    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                            <table id="configTable" class="min-w-full divide-y divide-white/10">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-white sm:pl-0">Name</th>
+                                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-white lg:table-cell">Figma File Key</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Update Frequency</th>
+                                        <th scope="col" class="hidden px-3 py-3.5 text-left text-sm font-semibold text-white sm:table-cell">Last Updated</th>
+                                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-white">Status</th>
+                                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                                            <span class="sr-only">Actions</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="configList">
+                                    <!-- Configurations will be inserted here -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </form>
-                <div class="px-6 py-4 bg-gray-700 rounded-b-lg flex justify-end space-x-3">
-                    <button onclick="closeModal()" class="px-4 py-2 text-gray-300 hover:text-white">
-                        Cancel
-                    </button>
-                    <button onclick="submitForm()" class="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
-                        Save Configuration
-                    </button>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
+    <!-- Update the displayConfigurations function to match the new design -->
     <script>
-        const GITHUB_CLIENT_ID = 'Ov23liK9KC0S5TMLrdf9';
-        const REPO_OWNER = 'th1lo';
-        const REPO_NAME = 'figma-btc-updater';
-        let githubToken = '';
-
-        // Check if we're already authenticated
-        function checkAuth() {
-            githubToken = sessionStorage.getItem('github_token');
-            if (githubToken) {
-                document.getElementById('content').classList.remove('hidden');
-                document.getElementById('login').classList.add('hidden');
-                loadConfigurations();
-            }
-        }
-
-        // Replace the login and handleCallback functions with this:
-        async function authenticateWithToken() {
-            const token = document.getElementById('pat').value.trim();
-            if (!token) {
-                alert('Please enter a token');
-                return;
-            }
-
-            try {
-                // Test the token by trying to read the repo contents
-                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Invalid token or insufficient permissions');
-                }
-
-                // Token is valid, save it
-                githubToken = token;
-                sessionStorage.setItem('github_token', token);
-                
-                // Show the main interface
-                document.getElementById('content').classList.remove('hidden');
-                document.getElementById('login').classList.add('hidden');
-                loadConfigurations();
-            } catch (error) {
-                console.error('Authentication error:', error);
-                alert('Authentication failed: ' + error.message);
-            }
-        }
-
-        // Load configurations
-        async function loadConfigurations() {
-            try {
-                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/.github/btc-tracker-config.json`, {
-                    headers: {
-                        'Authorization': `token ${githubToken}`,  // Changed from Bearer to token
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                if (!response.ok) {
-                    throw new Error(`GitHub API error: ${response.status}`);
-                }
-                const data = await response.json();
-                const content = JSON.parse(atob(data.content));
-                displayConfigurations(content.configurations);
-            } catch (error) {
-                console.error('Error loading configurations:', error);
-                // Clear token if unauthorized
-                if (error.message.includes('401')) {
-                    sessionStorage.removeItem('github_token');
-                    document.getElementById('content').classList.add('hidden');
-                    document.getElementById('login').classList.remove('hidden');
-                }
-            }
-        }
-
-        // Display configurations in the UI
         function displayConfigurations(configs) {
-            const configTable = document.getElementById('configTable');
-            const emptyState = document.getElementById('emptyState');
-            
-            if (!configs || configs.length === 0) {
-                configTable.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-                return;
-            }
-
-            configTable.classList.remove('hidden');
-            emptyState.classList.add('hidden');
+            // ... existing empty state check ...
 
             const configList = document.getElementById('configList');
             configList.innerHTML = configs.map(config => {
                 const lastUpdated = config.lastUpdated 
-                    ? new Date(config.lastUpdated).toLocaleString()
+                    ? new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
+                        -Math.round((Date.now() - new Date(config.lastUpdated).getTime()) / 60000),
+                        'minutes'
+                      )
                     : 'Never';
                 
                 const lastLog = config.logs && config.logs.length > 0
                     ? config.logs[config.logs.length - 1]
                     : 'No logs available';
 
-                const statusClass = config.enabled ? 'status-active' : 'status-paused';
-                const statusText = config.enabled ? 'Active' : 'Paused';
+                const statusClass = config.enabled 
+                    ? 'text-green-400 bg-green-400/10' 
+                    : 'text-rose-400 bg-rose-400/10';
 
                 return `
-                    <tr class="hover:bg-white/5">
-                        <td class="py-4 pl-4 pr-8 sm:pl-6 lg:pl-8">
-                            <div class="flex items-center gap-x-4">
-                                <div class="truncate text-sm font-medium text-white">${config.id}</div>
-                            </div>
+                    <tr>
+                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                            ${config.id}
                         </td>
-                        <td class="hidden py-4 pl-0 pr-8 sm:table-cell">
+                        <td class="hidden whitespace-nowrap px-3 py-4 text-sm text-gray-300 sm:table-cell">
                             <div class="flex gap-x-3">
-                                <div class="font-mono text-sm text-gray-400">${config.figmaFileKey}</div>
+                                <div class="font-mono">${config.figmaFileKey}</div>
                             </div>
                         </td>
-                        <td class="py-4 pl-0 pr-8 text-sm text-gray-400">
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
                             Every ${config.interval} minutes
                         </td>
-                        <td class="hidden py-4 pl-0 pr-8 text-sm text-gray-400 md:table-cell">
+                        <td class="hidden whitespace-nowrap px-3 py-4 text-sm text-gray-300 md:table-cell">
                             ${lastUpdated}
                         </td>
-                        <td class="py-4 pl-0 pr-4 sm:pr-8 lg:pr-20">
+                        <td class="whitespace-nowrap px-3 py-4 text-sm">
                             <div class="flex items-center gap-x-2">
                                 <div class="${statusClass} flex-none rounded-full p-1">
                                     <div class="h-1.5 w-1.5 rounded-full bg-current"></div>
                                 </div>
-                                <div class="text-sm text-white">${statusText}</div>
+                                <span class="text-white">${config.enabled ? 'Active' : 'Paused'}</span>
                             </div>
                         </td>
-                        <td class="py-4 pl-0 pr-4 text-right text-sm font-medium sm:pr-6 lg:pr-8">
+                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                             <div class="flex justify-end gap-x-3">
                                 <button onclick="toggleConfig('${config.id}')" 
                                     class="text-orange-400 hover:text-orange-300">
@@ -302,11 +149,11 @@
                             </div>
                         </td>
                     </tr>
-                    <tr class="bg-gray-800/50">
-                        <td colspan="6" class="px-4 py-4 sm:px-6 lg:px-8">
-                            <div class="text-sm text-gray-400">
-                                <strong class="text-white">Last Update Log:</strong>
-                                <pre class="mt-2 text-xs bg-gray-800/50 p-2 rounded overflow-auto max-h-20 border border-white/10">${lastLog}</pre>
+                    <tr class="border-t border-white/5 bg-gray-800/40">
+                        <td colspan="6" class="px-3 py-4">
+                            <div class="text-sm">
+                                <strong class="font-medium text-white">Last Update Log:</strong>
+                                <pre class="mt-2 text-xs text-gray-300 bg-gray-800/50 p-2 rounded overflow-auto max-h-20 border border-white/10">${lastLog}</pre>
                             </div>
                         </td>
                     </tr>
